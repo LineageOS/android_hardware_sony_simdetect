@@ -38,9 +38,6 @@ class SimDetectService : Service() {
     private var NOTHING_HAPPENED = "0"
     private var SIM_REMOVED = "1"
     private var SIM_INSERTED = "2"
-    // From src/java/com/android/internal/telephony/uicc/UiccSlot.java
-    private var EVENT_CARD_REMOVED = 13
-    private var EVENT_CARD_ADDED = 14
 
     private val lock = Any()
 
@@ -70,9 +67,10 @@ class SimDetectService : Service() {
 
     private fun promptForRestart(isAdded: Boolean) {
         Handler(Looper.getMainLooper()).post({
-            val uiccSlot = UiccSlot(this@SimDetectService, false)
-            uiccSlot.sendMessage(uiccSlot.obtainMessage(
-                    if (isAdded) EVENT_CARD_ADDED else EVENT_CARD_REMOVED, null))
+            UiccSlot::class.java.getDeclaredMethod("promptForRestart", Boolean::class.java).let {
+                it.isAccessible = true
+                it.invoke(UiccSlot(this@SimDetectService, false), isAdded)
+            }
         })
     }
 }
