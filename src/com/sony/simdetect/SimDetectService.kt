@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 The LineageOS Project
+ * Copyright (c) 2019-2025 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,11 +44,16 @@ class SimDetectService : Service() {
     private val simDetectEventObserver = object : UEventObserver() {
         override fun onUEvent(event: UEvent) {
             synchronized(lock) {
-                val switchState = event.get("SWITCH_STATE")
-                if (SIM_REMOVED.equals(switchState)) {
-                    promptForRestart(false)
-                } else if (SIM_INSERTED.equals(switchState)) {
-                    promptForRestart(true)
+                when (event.get("SWITCH_STATE")) {
+                    SIM_REMOVED -> return promptForRestart(false)
+                    SIM_INSERTED -> return promptForRestart(true)
+                    else -> {}
+                }
+
+                when (event.get("STATE")?.last()) {
+                    '0' -> return promptForRestart(false)
+                    '1' -> return promptForRestart(true)
+                    else -> {}
                 }
             }
         }
@@ -58,6 +63,7 @@ class SimDetectService : Service() {
         val isHotSwapSupported = getResources().getBoolean(R.bool.config_hotswapCapable)
         if (!isHotSwapSupported) {
             simDetectEventObserver.startObserving("SWITCH_NAME=sim_detect")
+            simDetectEventObserver.startObserving("NAME=soc:sim_detect")
         }
     }
 
