@@ -34,21 +34,31 @@ import com.android.internal.telephony.uicc.UiccSlot
 
 class SimDetectService : Service() {
     private var TAG = "SimDetectService"
-    // From drivers/misc/sim_detect.c
     private var NOTHING_HAPPENED = "0"
     private var SIM_REMOVED = "1"
     private var SIM_INSERTED = "2"
+    private val EXTCON_REMOVED = "MECHANICAL=0"
+    private val EXTCON_INSERTED = "MECHANICAL=1"
 
     private val lock = Any()
 
     private val simDetectEventObserver = object : UEventObserver() {
         override fun onUEvent(event: UEvent) {
             synchronized(lock) {
-                val switchState = event.get("SWITCH_STATE")
-                if (SIM_REMOVED.equals(switchState)) {
-                    promptForRestart(false)
-                } else if (SIM_INSERTED.equals(switchState)) {
-                    promptForRestart(true)
+                val legacyState = event.get("SWITCH_STATE")
+                if (legacyState != null) {
+                    when (legacyState) {
+                        SIM_REMOVED     -> promptForRestart(false)
+                        SIM_INSERTED    -> promptForRestart(true)
+                    }
+                    return
+                }
+                val extconState = event.get("STATE")
+                if (extconState != null) {
+                    when (extconState) {
+                        EXTCON_REMOVED     -> promptForRestart(false)
+                        EXTCON_INSERTED    -> promptForRestart(true)
+                    }
                 }
             }
         }
@@ -58,6 +68,7 @@ class SimDetectService : Service() {
         val isHotSwapSupported = getResources().getBoolean(R.bool.config_hotswapCapable)
         if (!isHotSwapSupported) {
             simDetectEventObserver.startObserving("SWITCH_NAME=sim_detect")
+            simDetectEventObserver.startObserving("NAME=soc:sim_detect")
         }
     }
 
