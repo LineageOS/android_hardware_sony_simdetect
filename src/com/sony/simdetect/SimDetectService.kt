@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 The LineageOS Project
+ * Copyright (c) 2019-2026 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import android.os.Message
 import android.os.UEventObserver
 
 import com.android.internal.R
+import com.android.internal.telephony.flags.FeatureFlagsImpl
 import com.android.internal.telephony.uicc.UiccSlot
 
 class SimDetectService : Service() {
@@ -75,7 +76,7 @@ class SimDetectService : Service() {
         Handler(Looper.getMainLooper()).post({
             UiccSlot::class.java.getDeclaredMethod("promptForRestart", Boolean::class.java).let {
                 it.isAccessible = true
-                it.invoke(UiccSlot(this@SimDetectService, false), isAdded)
+                it.invoke(UiccSlot(this@SimDetectService, false, FeatureFlagsImpl()), isAdded)
             }
         })
     }
